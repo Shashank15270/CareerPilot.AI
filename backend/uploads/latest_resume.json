@@ -1,0 +1,108 @@
+{
+  "file_path": "/Users/shashankyadav/ai-powered-job-search-assistant/backend/uploads/84b37a80278d4e84894826e03caf4f8b.pdf",
+  "resume_text": "Sai Kaushik Mangalampalli\n+91-9347634072 | saikaushik003@gmail.com | SaiKaushik: LinkedIn\n↗| GitHub: saikaushik003\n↗\nEDUCATION\nMarri Laxman Reddy Institute of Technology and Management\nHyderabad, India\nBachelor of Technology in Computer Science Engineering (Artificial Intelligence & Machine Learning)\nDec 2020 – Aug 2024\n• Percentage: 76.8% – First Class with Distinction\nTECHNICAL SKILLS\nProgramming Languages & Web Technologies: Python (Proficient), Java, JavaScript, HTML5, CSS, Tailwind CSS, Bootstrap\nFrameworks & Libraries: Flask, FastAPI, Django, React.js\nDevelopment Tools & Platforms: Git, GitHub, GitLab, VS Code, Cursor, Antigravity\nDatabase & Cloud Technologies: MySQL, MongoDB, Firebase, Render, Netlify\nDevelopment Methodologies: Agile (Scrum), Test-Driven Development (TDD)\nWORK EXPERIENCE\nFreelance Frontend Developer | Remote\nFeb 2025 – Aug 2025\n• Delivered responsive UIs for multiple clients using React.js, HTML5, CSS3, Tailwind CSS, JavaScript.\n• Applied Agile (Scrum) workflows by incorporating client feedback in short iterations and delivering production-ready designs.\n• Collaborated with clients and a senior teammate to refine requirements and resolve responsiveness issues across devices.\n• Recent work: Yuga IAS\n↗– developed a landing page and UI components with high-resolution desktop optimization (HD, Full HD, 2K, 4K).\nPROJECTS\nCodeArena – AI-Powered Multiplayer Coding Platform\n↗| FastAPI, Judge0 API, Gemini API, Render, Netlify\nSep 2025 – Feb 2026\n• Built a real-time multiplayer coding platform using Python, FastAPI, and WebSockets supporting 100 concurrent users(up to 5 players per\nroom) with synchronized timers and dynamic leaderboards.\n• Integrated Judge0 for sandboxed execution in 4 languages (Python, Java, Go, JS) and Google Gemini for AI-based time-complexity analysis\nwith 50% partial-point scoring for TLE submissions.\n• Deployed a secure, high-performance backend with API proxying, CORS restrictions, environment-based secrets, and full CI/CD pipelines;\nachieved a 250ms average response time under a 500-request load test.\n• Resolved critical production-level challenges including WebSocket race conditions (by reconfiguring Gunicorn to a single worker) and\nin-memory state loss (by implementing a persistent uptime monitor), ensuring 24/7 service reliability.\nCodenames Online – Real-Time Multiplayer Web Game\n↗| React.js, Firebase, Tailwind CSS, JavaScript\nMay 2025 – Aug 2025\n• Architected full-stack real-time multiplayer web application using React.js and Firebase Firestore with complex game state management.\n• Built React hooks, real-time chat functionality, automated team assignment logic, and turn-based gameplay mechanics.\n• Configured 4-player game mechanics with automatic team balancing, role-based access control, and session persistence.\n• Crafted UI with Tailwind CSS featuring interactive game board and lobby system; deployed on Netlify with Firebase security rules.\nTridle – 3-Word Wordle Variant Game\n↗| React.js, JavaScript, CSS3, Python\nJan 2025 – Mar 2025\n• Pioneered a Wordle-based puzzle game where players solve three five-letter puzzles simultaneously using React component architecture.\n• Designed a virtual keyboard, color-coded feedback system, and theme toggling using React hooks with smooth CSS transitions.\n• Integrated persistent player statistics (games played, wins, win %) using localStorage and implemented a ’Play Again’ flow which generates\nnew puzzle sets for replayability.\n• Complemented frontend with a Python console version for puzzle generation & well-structured state management for multi-board gameplay.\nOther Projects: Football Arena – Ultimate Goals Challenge\n↗, Star Showdown – Higher or Lower Game\n↗\nCERTIFICATIONS\nHackerRank Certifications: Python (Basic), Java (Basic), SQL (Basic), Problem Solving (Basic), Problem Solving (Intermediate), Software\nEngineer Intern, Software Engineer\nFreeCodeCamp Certifications: Machine Learning with Python, Scientific Computing with Python, Data Analysis with Python\nCISCO Networking Academy: Programming Essentials in C, Advanced Programming in C\nPROGRAMMING PROFILES\nLeetCode: EraOfKaushik003\n↗(1815+ problems solved) | HackerRank: saikaushik6637\n↗| Codewars: EraOfKaushik003\n↗(4 kyu)\n",
+  "resume_information": {
+    "name": "Sai Kaushik Mangalampalli",
+    "email": "saikaushik003@gmail.com",
+    "phone": "+91-9347634072",
+    "summary": "",
+    "skills": {
+      "programming_languages": [
+        "Python (Proficient)",
+        "Java",
+        "JavaScript",
+        "HTML5",
+        "CSS",
+        "Tailwind CSS"
+      ],
+      "frameworks": [
+        "Flask",
+        "FastAPI",
+        "Django",
+        "React."
+      ],
+      "databases": [
+        "MySQL",
+        "MongoDB",
+        "Firebase",
+        "Render"
+      ],
+      "cloud": [
+        "Git",
+        "GitHub",
+        "GitLab",
+        "VS Code",
+        "Cursor",
+        "Antigravity"
+      ],
+      "devops": [],
+      "machine_learning": [],
+      "other": [
+        "Agile (Scrum)",
+        "Test-Driven Development (TDD)"
+      ]
+    },
+    "experience": [
+      {
+        "company": "Freelance Frontend Developer",
+        "role": "Remote",
+        "duration": "Feb 2025 – Aug 2025",
+        "description": "Delivered responsive UIs for multiple clients using React.js, HTML5, CSS3, Tailwind CSS, JavaScript.\nApplied Agile (Scrum) workflows by incorporating client feedback in short iterations and delivering production-ready designs.\nCollaborated with clients and a senior teammate to refine requirements and resolve responsiveness issues across devices.\nRecent work: Yuga IAS ↗– developed a landing page and UI components with high-resolution desktop optimization (HD, Full HD, 2K, 4K)."
+      }
+    ],
+    "education": [
+      {
+        "institution": "Marri Laxman Reddy Institute of Technology and Management",
+        "degree": "Bachelor of Technology in Computer Science Engineering (Artificial Intelligence & Machine Learning)",
+        "duration": "Dec 2020 – Aug 2024",
+        "location": "Hyderabad, India"
+      },
+      {
+        "institution": "• Percentage: 76.8% – First Class with Distinction",
+        "degree": "",
+        "duration": "",
+        "location": ""
+      }
+    ],
+    "projects": [
+      {
+        "title": "CodeArena – AI-Powered Multiplayer Coding Platform",
+        "duration": "Sep 2025 – Feb 2026",
+        "technologies": "↗| FastAPI, Judge0 API, Gemini API, Render, Netlify",
+        "description": "Built a real-time multiplayer coding platform using Python, FastAPI, and WebSockets supporting 100 concurrent users(up to 5 players per room) with synchronized timers and dynamic leaderboards.\nIntegrated Judge0 for sandboxed execution in 4 languages (Python, Java, Go, JS) and Google Gemini for AI-based time-complexity analysis with 50% partial-point scoring for TLE submissions.\nDeployed a secure, high-performance backend with API proxying, CORS restrictions, environment-based secrets, and full CI/CD pipelines; achieved a 250ms average response time under a 500-request load test.\nResolved critical production-level challenges including WebSocket race conditions (by reconfiguring Gunicorn to a single worker) and in-memory state loss (by implementing a persistent uptime monitor), ensuring 24/7 service reliability."
+      },
+      {
+        "title": "Codenames Online – Real-Time Multiplayer Web Game",
+        "duration": "May 2025 – Aug 2025",
+        "technologies": "↗| React.js, Firebase, Tailwind CSS, JavaScript",
+        "description": "Architected full-stack real-time multiplayer web application using React.js and Firebase Firestore with complex game state management.\nBuilt React hooks, real-time chat functionality, automated team assignment logic, and turn-based gameplay mechanics.\nConfigured 4-player game mechanics with automatic team balancing, role-based access control, and session persistence.\nCrafted UI with Tailwind CSS featuring interactive game board and lobby system; deployed on Netlify with Firebase security rules."
+      },
+      {
+        "title": "Tridle – 3-Word Wordle Variant Game",
+        "duration": "Jan 2025 – Mar 2025",
+        "technologies": "↗| React.js, JavaScript, CSS3, Python",
+        "description": "Pioneered a Wordle-based puzzle game where players solve three five-letter puzzles simultaneously using React component architecture.\nDesigned a virtual keyboard, color-coded feedback system, and theme toggling using React hooks with smooth CSS transitions.\nIntegrated persistent player statistics (games played, wins, win %) using localStorage and implemented a ’Play Again’ flow which generates new puzzle sets for replayability.\nComplemented frontend with a Python console version for puzzle generation & well-structured state management for multi-board gameplay. Other Projects: Football Arena – Ultimate Goals Challenge ↗, Star Showdown – Higher or Lower Game"
+      },
+      {
+        "title": "↗",
+        "duration": "",
+        "technologies": "",
+        "description": ""
+      }
+    ],
+    "certifications": [
+      "HackerRank Certifications: Python (Basic), Java (Basic), SQL (Basic), Problem Solving (Basic), Problem Solving (Intermediate), Software",
+      "Engineer Intern, Software Engineer",
+      "FreeCodeCamp Certifications: Machine Learning with Python, Scientific Computing with Python, Data Analysis with Python",
+      "CISCO Networking Academy: Programming Essentials in C, Advanced Programming in C",
+      "PROGRAMMING PROFILES",
+      "LeetCode: EraOfKaushik003",
+      "↗(1815+ problems solved) | HackerRank: saikaushik6637",
+      "↗| Codewars: EraOfKaushik003",
+      "↗(4 kyu)"
+    ],
+    "achievements": "",
+    "languages": "",
+    "raw_text": "Sai Kaushik Mangalampalli\n+91-9347634072 | saikaushik003@gmail.com | SaiKaushik: LinkedIn\n↗| GitHub: saikaushik003\n↗\nEDUCATION\nMarri Laxman Reddy Institute of Technology and Management\nHyderabad, India\nBachelor of Technology in Computer Science Engineering (Artificial Intelligence & Machine Learning)\nDec 2020 – Aug 2024\n• Percentage: 76.8% – First Class with Distinction\nTECHNICAL SKILLS\nProgramming Languages & Web Technologies: Python (Proficient), Java, JavaScript, HTML5, CSS, Tailwind CSS, Bootstrap\nFrameworks & Libraries: Flask, FastAPI, Django, React.js\nDevelopment Tools & Platforms: Git, GitHub, GitLab, VS Code, Cursor, Antigravity\nDatabase & Cloud Technologies: MySQL, MongoDB, Firebase, Render, Netlify\nDevelopment Methodologies: Agile (Scrum), Test-Driven Development (TDD)\nWORK EXPERIENCE\nFreelance Frontend Developer | Remote\nFeb 2025 – Aug 2025\n• Delivered responsive UIs for multiple clients using React.js, HTML5, CSS3, Tailwind CSS, JavaScript.\n• Applied Agile (Scrum) workflows by incorporating client feedback in short iterations and delivering production-ready designs.\n• Collaborated with clients and a senior teammate to refine requirements and resolve responsiveness issues across devices.\n• Recent work: Yuga IAS\n↗– developed a landing page and UI components with high-resolution desktop optimization (HD, Full HD, 2K, 4K).\nPROJECTS\nCodeArena – AI-Powered Multiplayer Coding Platform\n↗| FastAPI, Judge0 API, Gemini API, Render, Netlify\nSep 2025 – Feb 2026\n• Built a real-time multiplayer coding platform using Python, FastAPI, and WebSockets supporting 100 concurrent users(up to 5 players per\nroom) with synchronized timers and dynamic leaderboards.\n• Integrated Judge0 for sandboxed execution in 4 languages (Python, Java, Go, JS) and Google Gemini for AI-based time-complexity analysis\nwith 50% partial-point scoring for TLE submissions.\n• Deployed a secure, high-performance backend with API proxying, CORS restrictions, environment-based secrets, and full CI/CD pipelines;\nachieved a 250ms average response time under a 500-request load test.\n• Resolved critical production-level challenges including WebSocket race conditions (by reconfiguring Gunicorn to a single worker) and\nin-memory state loss (by implementing a persistent uptime monitor), ensuring 24/7 service reliability.\nCodenames Online – Real-Time Multiplayer Web Game\n↗| React.js, Firebase, Tailwind CSS, JavaScript\nMay 2025 – Aug 2025\n• Architected full-stack real-time multiplayer web application using React.js and Firebase Firestore with complex game state management.\n• Built React hooks, real-time chat functionality, automated team assignment logic, and turn-based gameplay mechanics.\n• Configured 4-player game mechanics with automatic team balancing, role-based access control, and session persistence.\n• Crafted UI with Tailwind CSS featuring interactive game board and lobby system; deployed on Netlify with Firebase security rules.\nTridle – 3-Word Wordle Variant Game\n↗| React.js, JavaScript, CSS3, Python\nJan 2025 – Mar 2025\n• Pioneered a Wordle-based puzzle game where players solve three five-letter puzzles simultaneously using React component architecture.\n• Designed a virtual keyboard, color-coded feedback system, and theme toggling using React hooks with smooth CSS transitions.\n• Integrated persistent player statistics (games played, wins, win %) using localStorage and implemented a ’Play Again’ flow which generates\nnew puzzle sets for replayability.\n• Complemented frontend with a Python console version for puzzle generation & well-structured state management for multi-board gameplay.\nOther Projects: Football Arena – Ultimate Goals Challenge\n↗, Star Showdown – Higher or Lower Game\n↗\nCERTIFICATIONS\nHackerRank Certifications: Python (Basic), Java (Basic), SQL (Basic), Problem Solving (Basic), Problem Solving (Intermediate), Software\nEngineer Intern, Software Engineer\nFreeCodeCamp Certifications: Machine Learning with Python, Scientific Computing with Python, Data Analysis with Python\nCISCO Networking Academy: Programming Essentials in C, Advanced Programming in C\nPROGRAMMING PROFILES\nLeetCode: EraOfKaushik003\n↗(1815+ problems solved) | HackerRank: saikaushik6637\n↗| Codewars: EraOfKaushik003\n↗(4 kyu)\n"
+  }
+}

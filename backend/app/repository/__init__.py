@@ -1,0 +1,1 @@
+from app.repository.db_repository import JobSearchRepository

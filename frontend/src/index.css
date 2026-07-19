@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-text font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4F0E6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #78716C;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #704F38;
+}
+
+/* Core premium UI utilities */
+.glass {
+  background: rgba(28, 28, 30, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-card {
+  background: #1C1C1E;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-amber-600;
+}
+
+.glow-primary {
+  box-shadow: 0 0 50px -5px rgba(112, 79, 56, 0.15);
+}
+
+.glow-accent {
+  box-shadow: 0 0 50px -5px rgba(189, 90, 50, 0.15);
+}
+
+/* Form controls & inputs */
+.premium-input {
+  background-color: #ffffff;
+  border: 1px solid #E2E8F0;
+  color: #1C1A17;
+  transition: all 0.2s ease-in-out;
+}
+
+.premium-input:focus {
+  border-color: #704F38;
+  box-shadow: 0 0 0 2px rgba(112, 79, 56, 0.1);
+  outline: none;
+}
+
+/* Premium Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #704F38 0%, #BD5A32 100%);
+  color: #FFFFFF !important;
+  font-weight: 700;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(112, 79, 56, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #1B2A4A 0%, #2E4575 100%);
+  color: #FFFFFF !important;
+  font-weight: 700;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(27, 42, 74, 0.25);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Scoped HTML styles inside job descriptions to combat Tailwind CSS resets */
+.job-description-html p {
+  margin-bottom: 0.75rem;
+}
+
+.job-description-html p:last-child {
+  margin-bottom: 0;
+}
+
+.job-description-html ul,
+.job-description-html ol {
+  list-style-type: disc !important;
+  margin-left: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.job-description-html ol {
+  list-style-type: decimal !important;
+}
+
+.job-description-html li {
+  margin-bottom: 0.25rem !important;
+  list-style: inherit !important;
+}
+
+.job-description-html strong,
+.job-description-html b {
+  font-weight: 700 !important;
+  color: #ffffff !important;
+}
+
+.job-description-html a {
+  color: #BD5A32 !important;
+  text-decoration: underline !important;
+}
+
+.job-description-html a:hover {
+  color: #704F38 !important;
+}
+
+.job-description-html br {
+  margin-bottom: 0.5rem;
+}
