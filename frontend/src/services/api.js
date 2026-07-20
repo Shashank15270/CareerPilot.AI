@@ -18,6 +18,70 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Callback registered by AuthContext so a failed refresh can clear React state
+let onSessionExpired = null;
+export const setSessionExpiredHandler = (handler) => {
+  onSessionExpired = handler;
+};
+
+const clearSession = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refresh_token');
+  if (onSessionExpired) onSessionExpired();
+};
+
+// A single in-flight refresh shared by every request that 401s at the same time,
+// so a burst of parallel calls triggers one refresh instead of N competing ones.
+let refreshPromise = null;
+
+const refreshAccessToken = async () => {
+  const storedRefresh = localStorage.getItem('refresh_token');
+  if (!storedRefresh) throw new Error('No refresh token available');
+
+  // Bare axios, not `api` — this must not run through the response interceptor.
+  const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+    refresh_token: storedRefresh,
+  });
+  localStorage.setItem('token', response.data.access_token);
+  localStorage.setItem('refresh_token', response.data.refresh_token);
+  return response.data.access_token;
+};
+
+// Response interceptor: on 401, refresh once and replay the original request.
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+
+    if (error.response?.status !== 401 || !original || original._retry) {
+      return Promise.reject(error);
+    }
+
+    // The refresh endpoint itself failing means the session is genuinely dead.
+    if (original.url?.includes('/auth/refresh')) {
+      clearSession();
+      return Promise.reject(error);
+    }
+
+    original._retry = true;
+
+    try {
+      if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
+      const newToken = await refreshPromise;
+      original.headers = original.headers || {};
+      original.headers.Authorization = `Bearer ${newToken}`;
+      return api(original);
+    } catch (refreshError) {
+      clearSession();
+      return Promise.reject(error);
+    }
+  }
+);
+
 // Auth endpoints
 export const login = async (credentials) => {
   const response = await api.post('/auth/login', credentials);
@@ -36,6 +100,11 @@ export const getProfile = async () => {
 
 export const updateProfile = async (profileData) => {
   const response = await api.put('/auth/profile', profileData);
+  return response.data;
+};
+
+export const updateApiSettings = async (apiPreferences) => {
+  const response = await api.put('/auth/api-settings', { api_preferences: apiPreferences });
   return response.data;
 };
 
@@ -71,8 +140,10 @@ export const getRecommendations = async (resumeFile, options = {}) => {
 };
 
 // Career Coach AI operations
-export const getResumeReview = async () => {
-  const response = await api.post('/resume-review');
+// Passing the job makes the ATS/overall scores specific to that posting.
+// Called without a job it still returns a general, resume-wide review.
+export const getResumeReview = async (job = null) => {
+  const response = await api.post('/resume-review', job || null);
   return response.data;
 };
 
@@ -146,7 +217,9 @@ export default {
   register,
   getProfile,
   updateProfile,
+  updateApiSettings,
   logout,
+  setSessionExpiredHandler,
   getRecommendations,
   getResumeReview,
   getJobAnalysis,

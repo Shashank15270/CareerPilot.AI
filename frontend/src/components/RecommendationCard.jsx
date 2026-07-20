@@ -92,8 +92,13 @@ export default function RecommendationCard({ job, index }) {
     description
   } = job
 
-  // Calculate matching percentage (0.0 to 1.0 scale from backend)
-  const matchPercentage = Math.round(similarity_score * 100)
+  // Prefer the backend's composite match_score (skills 60% / experience 25% /
+  // location 15%) over the raw embedding similarity. The composite is what the
+  // ranking actually uses, so showing similarity_score made the displayed
+  // number disagree with the ordering of the list.
+  const matchPercentage = Math.round(
+    (job.match_score ?? similarity_score ?? 0) * 100
+  )
 
   // Determine progress bar stroke color and glowing colors
   const getProgressColor = (score) => {
@@ -118,7 +123,13 @@ export default function RecommendationCard({ job, index }) {
     try {
       let data = null
       if (panelType === 'review') {
-        data = await getResumeReview()
+        // Send the job so the ATS score reflects THIS posting.
+        data = await getResumeReview({
+          title: job.title,
+          company: job.company,
+          description: job.description,
+          similarity_score: job.similarity_score ?? 0,
+        })
       } else if (panelType === 'analysis') {
         data = await getJobAnalysis(job)
       } else if (panelType === 'gap') {
@@ -159,7 +170,7 @@ export default function RecommendationCard({ job, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.08, ease: 'easeOut' }}
       whileHover={{ y: -4 }}
-      className="rounded-2xl glass-card p-6 shadow-xl relative overflow-hidden group hover:border-white/10 transition-all duration-300"
+      className="rounded-2xl glass-card p-4 sm:p-6 shadow-xl relative overflow-hidden group hover:border-white/10 transition-all duration-300"
     >
       {/* Subtle top border glow */}
       <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -170,7 +181,7 @@ export default function RecommendationCard({ job, index }) {
         <div className="text-left space-y-3 flex-grow">
           <div>
             <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-white tracking-wide group-hover:text-primary transition-colors">
+              <h3 className="text-lg sm:text-xl font-bold text-white tracking-wide break-words group-hover:text-primary transition-colors">
                 {title}
               </h3>
               <button
@@ -314,7 +325,7 @@ export default function RecommendationCard({ job, index }) {
                   <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
                   AI Career Coach Assistant
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
+                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
                   <button
                     onClick={() => handleOpenPanel('review')}
                     className="flex items-center justify-center space-x-2 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-primary/30 text-xs text-white hover:text-primary transition-all duration-200 cursor-pointer"
@@ -357,21 +368,21 @@ export default function RecommendationCard({ job, index }) {
         </AnimatePresence>
       </div>
 
-      {/* AI CAREER COACH SLIDE-OVER / MODAL PANEL OVERLAY */}
+      {/* AI CAREER COACH INLINE PANEL */}
       <AnimatePresence>
         {activePanel && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="mt-4 pt-4 border-t border-white/5">
             
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="relative w-full max-w-4xl bg-card border border-white/10 rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="relative w-full bg-white/[0.02] border border-white/10 rounded-2xl overflow-hidden flex flex-col max-h-[70vh]"
             >
               
               {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.01]">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/5 bg-white/[0.01]">
                 <div className="flex items-center space-x-2 text-left">
                   <Sparkles className="h-5 w-5 text-primary animate-pulse" />
                   <div>
@@ -397,7 +408,7 @@ export default function RecommendationCard({ job, index }) {
               </div>
 
               {/* Modal Core Content Scroll Area */}
-              <div className="flex-grow overflow-y-auto p-6 space-y-6">
+              <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6">
                 
                 {/* 1. Loading State */}
                 {loading && (
@@ -447,7 +458,7 @@ export default function RecommendationCard({ job, index }) {
                       <div className="space-y-6">
                         
                         {/* Scores row */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                           <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center text-center">
                             <span className="text-4xl font-extrabold text-primary mb-1">
                               {panelData.overall_score}
@@ -573,7 +584,7 @@ export default function RecommendationCard({ job, index }) {
                         </div>
 
                         {/* Overlaps grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2.5">
                             <h5 className="text-xs font-bold text-primary uppercase tracking-wider">Matched skills</h5>
                             <div className="flex flex-wrap gap-1.5">
@@ -701,7 +712,7 @@ export default function RecommendationCard({ job, index }) {
                             Curated Courses
                           </h4>
                           <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse text-xs">
+                            <table className="w-full min-w-[520px] text-left border-collapse text-xs">
                               <thead>
                                 <tr className="border-b border-white/10 text-muted uppercase tracking-wider">
                                   <th className="py-2">Course Name</th>
@@ -739,7 +750,7 @@ export default function RecommendationCard({ job, index }) {
                             Strategic Certifications
                           </h4>
                           <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse text-xs">
+                            <table className="w-full min-w-[520px] text-left border-collapse text-xs">
                               <thead>
                                 <tr className="border-b border-white/10 text-muted uppercase tracking-wider">
                                   <th className="py-2">Certification</th>
@@ -900,7 +911,7 @@ export default function RecommendationCard({ job, index }) {
                         {/* 90-Day Improvement Plan */}
                         <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3 font-sans">
                           <h4 className="text-xs font-bold text-white/50 uppercase tracking-widest">Strategic 90-Day Plan</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {panelData.ninety_day_improvement_plan?.map((plan, i) => (
                               <div key={i} className="p-4 rounded-xl bg-white/[0.01] border border-white/5 space-y-2 text-left">
                                 <h5 className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
@@ -1024,7 +1035,7 @@ function QuestionAccordion({ q, idx }) {
             {/* Ideal Answer guidelines */}
             <div className="space-y-1 font-sans text-muted/90">
               <span className="font-bold text-white text-[10px] uppercase tracking-wider block">Ideal Answer Guidelines:</span>
-              <p className="leading-relaxed leading-relaxed bg-black/10 border border-white/5 p-3 rounded-lg whitespace-pre-line">
+              <p className="leading-relaxed bg-black/10 border border-white/5 p-3 rounded-lg whitespace-pre-line">
                 {q.ideal_answer_guidelines}
               </p>
             </div>

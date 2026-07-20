@@ -104,13 +104,13 @@ export default function UploadCard({ file, onFileChange, onRemove, onAnalyze, is
               exit={{ opacity: 0, scale: 0.95 }}
               className="space-y-6"
             >
-              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-                <div className="flex items-center space-x-4">
+              <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                <div className="flex items-center space-x-4 min-w-0">
                   <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 text-primary">
                     <FileCheck className="h-6 w-6" />
                   </div>
                   <div className="text-left">
-                    <div className="text-white font-semibold truncate max-w-[200px] sm:max-w-[320px]">
+                    <div className="text-white font-semibold truncate">
                       {file.name}
                     </div>
                     <div className="text-xs text-zinc-400">

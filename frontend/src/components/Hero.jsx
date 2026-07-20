@@ -6,7 +6,7 @@ export default function Hero() {
   return (
     <section className="relative overflow-hidden pt-20 pb-16 sm:pb-24 lg:pt-32">
       {/* Decorative ambient lighting */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center max-w-4xl mx-auto">
@@ -26,7 +26,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-6xl font-black tracking-tight text-text mb-6 leading-[1.15] font-display"
+            className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-text mb-6 leading-[1.15] font-display"
           >
             Match Your Resume to <span className="text-gradient">AI-Powered</span> Job Openings
           </motion.h1>
@@ -75,13 +75,13 @@ export default function Hero() {
           
           {/* Mock UI Shell */}
           <div className="bg-surface/90 rounded-[14px] p-6 sm:p-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/5 pb-6 mb-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-zinc-200 pb-6 mb-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 text-primary">
+                <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 text-primary shrink-0">
                   <FileText className="h-6 w-6" />
                 </div>
-                <div className="text-left">
-                  <div className="text-white font-semibold">resume_shashank.pdf</div>
+                <div className="text-left min-w-0">
+                  <div className="text-text font-semibold truncate">resume_shashank.pdf</div>
                   <div className="text-sm text-muted">Parsed successfully • 45kb</div>
                 </div>
               </div>
@@ -94,11 +94,11 @@ export default function Hero() {
 
             {/* Mock Matches List */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-white/10 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                  <div className="text-left">
-                    <div className="text-white font-medium text-sm sm:text-base">Senior Full Stack Engineer</div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white/60 border border-zinc-200 rounded-xl hover:border-zinc-300 transition-colors">
+                <div className="flex items-center space-x-4 min-w-0">
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0"></div>
+                  <div className="text-left min-w-0">
+                    <div className="text-text font-medium text-sm sm:text-base truncate">Senior Full Stack Engineer</div>
                     <div className="text-xs sm:text-sm text-muted">Lemon.io • Remote</div>
                   </div>
                 </div>
@@ -107,26 +107,26 @@ export default function Hero() {
                     <div className="text-sm text-accent font-semibold">96.8% Match</div>
                     <div className="text-xs text-muted">Semantic Vector Similarity</div>
                   </div>
-                  <div className="px-3.5 py-1.5 bg-primary/25 border border-primary/50 text-white rounded-lg text-xs font-semibold">
+                  <div className="px-3.5 py-1.5 bg-primary border border-primary text-white rounded-lg text-xs font-semibold shrink-0">
                     Best Match
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                <div className="flex items-center space-x-4">
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
-                  <div className="text-left">
-                    <div className="text-white font-medium text-sm sm:text-base">AI Software Engineer</div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white/60 border border-zinc-200 rounded-xl">
+                <div className="flex items-center space-x-4 min-w-0">
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-400 shrink-0"></div>
+                  <div className="text-left min-w-0">
+                    <div className="text-text font-medium text-sm sm:text-base truncate">AI Software Engineer</div>
                     <div className="text-xs sm:text-sm text-muted">Stripe • Remote</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="text-right hidden sm:block">
-                    <div className="text-sm text-white font-semibold">92.4% Match</div>
+                    <div className="text-sm text-text font-semibold">92.4% Match</div>
                     <div className="text-xs text-muted">Semantic Vector Similarity</div>
                   </div>
-                  <div className="px-3.5 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs font-semibold">
+                  <div className="px-3.5 py-1.5 bg-surface border border-zinc-200 text-text rounded-lg text-xs font-semibold shrink-0">
                     Match
                   </div>
                 </div>

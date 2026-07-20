@@ -4,8 +4,8 @@ import { ArrowLeft, AlertTriangle } from 'lucide-react'
 
 export default function NotFound() {
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-6 relative">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
+    <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] sm:w-[400px] sm:h-[400px] bg-red-500/5 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}

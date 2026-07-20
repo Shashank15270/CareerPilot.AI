@@ -10,15 +10,15 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12 relative min-h-[85vh] text-left">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 relative min-h-[85vh] text-left overflow-hidden">
       {/* Background neon elements */}
-      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[130px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
+      <div className="absolute top-1/4 left-1/3 w-[260px] h-[260px] sm:w-[400px] sm:h-[400px] bg-primary/5 rounded-full blur-[130px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
 
       <div className="space-y-8">
         {/* Header section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-200 pb-6">
           <div>
-            <h1 className="text-3xl font-black text-text tracking-tight flex items-center gap-2 font-display">
+            <h1 className="text-2xl sm:text-3xl font-black text-text tracking-tight flex items-center gap-2 font-display">
               <Sparkles className="h-6 w-6 text-primary" />
               Candidate Dashboard
             </h1>
@@ -28,7 +28,7 @@ export default function Dashboard() {
           </div>
           <Link
             to="/upload"
-            className="px-6 py-3.5 btn-primary rounded-xl flex items-center space-x-2 shadow-md"
+            className="w-full md:w-auto justify-center px-6 py-3.5 btn-primary rounded-xl flex items-center space-x-2 shadow-md"
           >
             <span>Scan New Resume</span>
             <ArrowRight className="h-4 w-4" />
@@ -36,9 +36,9 @@ export default function Dashboard() {
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Quick Stats Widget */}
-          <div className="lg:col-span-1 grid grid-cols-2 gap-4">
+          <div className="lg:col-span-1 grid grid-cols-1 xs:grid-cols-2 gap-4">
             <div className="p-5 rounded-3xl bg-card border border-white/5 shadow-lg flex flex-col justify-between space-y-4">
               <div className="w-10 h-10 bg-primary/20 border border-primary/40 rounded-xl flex items-center justify-center text-primary">
                 <FileText className="h-5 w-5" />
@@ -61,7 +61,7 @@ export default function Dashboard() {
 
             <Link
               to="/history"
-              className="col-span-2 p-5 rounded-3xl bg-card border border-white/5 hover:border-white/10 transition-all flex items-center justify-between shadow-lg group cursor-pointer"
+              className="col-span-full p-5 rounded-3xl bg-card border border-white/5 hover:border-white/10 transition-all flex items-center justify-between shadow-lg group cursor-pointer"
             >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-zinc-300 group-hover:bg-primary/20 group-hover:text-primary transition-all">
@@ -77,7 +77,7 @@ export default function Dashboard() {
           </div>
 
           {/* Detailed Profile Info */}
-          <div className="lg:col-span-2 p-6 rounded-3xl bg-card border border-white/5 shadow-lg space-y-6 flex flex-col justify-between">
+          <div className="lg:col-span-2 p-4 sm:p-6 rounded-3xl bg-card border border-white/5 shadow-lg space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <div>

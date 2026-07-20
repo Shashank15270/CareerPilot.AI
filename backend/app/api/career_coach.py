@@ -86,7 +86,24 @@ def get_latest_resume_version_context(db: Session, user_id: int = 1) -> tuple[in
         resume_text = latest_resume.resume_text if latest_resume else ""
         return latest_version.id, latest_version.resume_info_json, resume_text
 
-    # Database is empty for this user, fallback to latest_resume.json on disk
+    # No resume stored for this user.
+    #
+    # There is a legacy disk cache at uploads/latest_resume.json, but it is a
+    # SINGLE GLOBAL FILE holding whichever resume was parsed most recently by
+    # anyone. Reading it here handed one user another user's resume, which is
+    # both a privacy leak and the reason analyses referenced a document the
+    # signed-in user never uploaded. It is only safe for the anonymous/seed
+    # user, whose data that cache effectively is.
+    if user_id != 1:
+        logger.info(f"No resume stored for user {user_id}; asking them to upload.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "No resume found for your account. Please upload your resume on "
+                "the Scan page first, then try the AI Career Coach again."
+            )
+        )
+
     file_context = get_latest_resume_context()
     try:
         db_resume = repo.create_resume(
@@ -111,16 +128,28 @@ def get_latest_resume_version_context(db: Session, user_id: int = 1) -> tuple[in
 # -------------------------------------------------------------
 
 @router.post("/resume-review")
-async def get_resume_review(db: Session = Depends(get_db), current_user: User = Depends(get_current_user_optional)):
+async def get_resume_review(
+    job: Optional[JobDetailsSchema] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_optional)
+):
     """
     Feature 1: Analyze the uploaded resume and return overall score, strengths,
     weaknesses, ATS compatibility, suggestions, and suggestions.
+
+    The job body is optional. When supplied, the scores are computed against
+    that posting so each job card gets its own ATS number instead of every card
+    repeating one generic resume-wide score.
     """
     logger.info(f"Resume review request received for user: {current_user.email}")
     version_id, resume_info, resume_text = get_latest_resume_version_context(db, user_id=current_user.id)
-    
+
+    job_details = job.model_dump() if job else None
+    if job_details:
+        logger.info(f"Scoring resume against specific job: {job_details.get('title')}")
+
     try:
-        review_result = await review_resume(resume_text, resume_info)
+        review_result = await review_resume(resume_text, resume_info, job_details)
         
         # Persist review report in DB
         from app.repository.db_repository import JobSearchRepository
@@ -128,6 +157,14 @@ async def get_resume_review(db: Session = Depends(get_db), current_user: User = 
         repo.create_resume_review(user_id=current_user.id, resume_version_id=version_id, review_json=review_result)
         
         return review_result
+    except HTTPException:
+        raise
+    except ConnectionError as ce:
+        logger.warning(f"Groq unreachable: {ce}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(ce)
+        )
     except Exception as e:
         logger.error(f"Error during resume review: {str(e)}")
         raise HTTPException(
@@ -148,6 +185,14 @@ async def get_job_analysis(job: JobDetailsSchema, db: Session = Depends(get_db),
     try:
         match_explanation = await analyze_job_match(resume_info, job_details)
         return match_explanation
+    except HTTPException:
+        raise
+    except ConnectionError as ce:
+        logger.warning(f"Groq unreachable: {ce}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(ce)
+        )
     except Exception as e:
         logger.error(f"Error during job analysis: {str(e)}")
         raise HTTPException(
@@ -180,6 +225,14 @@ async def get_skill_gap(job: JobDetailsSchema, db: Session = Depends(get_db), cu
         )
         
         return gap_analysis
+    except HTTPException:
+        raise
+    except ConnectionError as ce:
+        logger.warning(f"Groq unreachable: {ce}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(ce)
+        )
     except Exception as e:
         logger.error(f"Error during skill gap analysis: {str(e)}")
         raise HTTPException(
@@ -200,6 +253,14 @@ async def get_interview_prep(job: JobDetailsSchema, db: Session = Depends(get_db
     try:
         prep_questions = await prepare_interview(resume_info, job_details)
         return prep_questions
+    except HTTPException:
+        raise
+    except ConnectionError as ce:
+        logger.warning(f"Groq unreachable: {ce}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(ce)
+        )
     except Exception as e:
         logger.error(f"Error during interview prep generation: {str(e)}")
         raise HTTPException(
@@ -242,6 +303,14 @@ async def start_mock_interview(request: MockInterviewStartRequest, db: Session =
         )
         
         return session_data
+    except HTTPException:
+        raise
+    except ConnectionError as ce:
+        logger.warning(f"Groq unreachable: {ce}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(ce)
+        )
     except Exception as e:
         logger.error(f"Error starting mock interview session: {str(e)}")
         raise HTTPException(
@@ -297,6 +366,14 @@ async def submit_answer(request: MockInterviewAnswerRequest, db: Session = Depen
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(ve)
         )
+    except HTTPException:
+        raise
+    except ConnectionError as ce:
+        logger.warning(f"Groq unreachable: {ce}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(ce)
+        )
     except Exception as e:
         logger.error(f"Error evaluating mock interview answer: {str(e)}")
         raise HTTPException(
@@ -322,6 +399,14 @@ async def get_career_coach(db: Session = Depends(get_db), current_user: User = D
         repo.create_career_report(user_id=current_user.id, resume_version_id=version_id, report_json=coaching_details)
         
         return coaching_details
+    except HTTPException:
+        raise
+    except ConnectionError as ce:
+        logger.warning(f"Groq unreachable: {ce}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(ce)
+        )
     except Exception as e:
         logger.error(f"Error in career coach suggestions: {str(e)}")
         raise HTTPException(

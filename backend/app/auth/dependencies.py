@@ -57,18 +57,34 @@ def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -
     """
     FastAPI dependency to retrieve current user if authenticated,
     otherwise falls back to the default seed user (ID = 1).
+
+    A *present but invalid* token is treated as an error rather than as an
+    anonymous request. Previously an expired token silently fell through to the
+    seed user, so a logged-in visitor whose session had lapsed was served user
+    ID 1's saved jobs and history instead of a 401. Anonymous requests (no
+    Authorization header at all) still get the seed user so the public
+    upload/recommend flow keeps working.
     """
     token = get_token_from_header(request)
     if token:
         payload = decode_token(token, expected_type="access")
-        if payload:
-            email = payload.get("sub")
-            if email:
-                user = db.query(User).filter(User.email == email).first()
-                if user:
-                    return user
-    
-    # Fallback to seeded default user with ID = 1
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired access token.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        email = payload.get("sub")
+        user = db.query(User).filter(User.email == email).first() if email else None
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found for the supplied token.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user
+
+    # No credentials supplied at all: fall back to the seeded default user.
     default_user = db.query(User).filter(User.id == 1).first()
     if not default_user:
         # Create seed user if database is unseeded

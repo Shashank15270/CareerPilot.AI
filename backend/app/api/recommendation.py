@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -105,6 +106,19 @@ async def recommend(
     finally:
         # Release resource
         await resume.close()
+
+    # JSearch is the only job source, so a missing key means zero results no
+    # matter what. Fail loudly here rather than returning an empty list that
+    # looks identical to "no jobs matched your filters".
+    if not os.getenv("RAPIDAPI_KEY"):
+        logger.error("RAPIDAPI_KEY is not configured; cannot fetch any jobs.")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Job search is not configured on the server: RAPIDAPI_KEY is missing. "
+                "Add it to backend/.env and restart the server."
+            ),
+        )
 
     # Call recommendation engine
     try:

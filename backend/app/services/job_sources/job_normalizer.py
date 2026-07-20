@@ -3,6 +3,13 @@ import uuid
 import logging
 from datetime import datetime
 
+from app.config.india import (
+    COUNTRY_NAME,
+    COUNTRY_CODE,
+    CURRENCY_SYMBOL,
+    canonical_city,
+)
+
 logger = logging.getLogger(__name__)
 
 def _strip_html(text: str) -> str:
@@ -174,14 +181,28 @@ def normalize_jsearch_job(raw_job: dict) -> dict:
     title = raw_job.get("job_title") or ""
     company = raw_job.get("employer_name") or ""
     
-    city = raw_job.get("job_city")
+    # Canonicalise the city so "Bangalore" and "Bengaluru" are the same place
+    # for dedup and region matching downstream.
+    city = canonical_city(raw_job.get("job_city") or "")
     state = raw_job.get("job_state")
-    country_code = raw_job.get("job_country") or "IN"
-    
-    location_parts = [p for p in [city, state, country_code] if p]
-    location = ", ".join(location_parts) or "India"
-    
-    country = "India"
+    country_code = (raw_job.get("job_country") or COUNTRY_CODE).upper()
+
+    # search-v2 also ships a prebuilt "City, State" string; prefer our own
+    # canonicalised parts but fall back to it when city/state are absent.
+    if not city and not state and raw_job.get("job_location"):
+        parts = [p.strip() for p in str(raw_job["job_location"]).split(",")]
+        if parts:
+            city = canonical_city(parts[0])
+            state = parts[1] if len(parts) > 1 else None
+
+    location_parts = [p for p in [city, state] if p]
+    if country_code == COUNTRY_CODE:
+        location_parts.append(COUNTRY_NAME)
+    else:
+        location_parts.append(country_code)
+    location = ", ".join(location_parts) or COUNTRY_NAME
+
+    country = COUNTRY_NAME
     if country_code == "US":
         country = "USA"
     elif country_code == "GB":
@@ -190,7 +211,7 @@ def normalize_jsearch_job(raw_job: dict) -> dict:
         country = "Canada"
     elif country_code == "AU":
         country = "Australia"
-    elif country_code != "IN":
+    elif country_code != COUNTRY_CODE:
         country = country_code
 
     emp_type_raw = str(raw_job.get("job_employment_type") or "").upper()
@@ -209,12 +230,21 @@ def normalize_jsearch_job(raw_job: dict) -> dict:
     # Format salary
     min_sal = raw_job.get("job_min_salary")
     max_sal = raw_job.get("job_max_salary")
-    currency = raw_job.get("job_salary_currency") or "$"
+    # Default to rupees for India rather than dollars; only trust the API's
+    # currency when it actually supplied one.
+    raw_currency = raw_job.get("job_salary_currency")
+    if raw_currency == "INR" or (not raw_currency and country == COUNTRY_NAME):
+        currency = CURRENCY_SYMBOL
+    else:
+        currency = raw_currency or "$"
     salary = ""
     if min_sal is not None and max_sal is not None:
         salary = f"{currency}{min_sal:,.0f} - {currency}{max_sal:,.0f}"
     elif min_sal is not None:
         salary = f"{currency}{min_sal:,.0f}+"
+    else:
+        # search-v2 often leaves min/max null but supplies a prose range here.
+        salary = raw_job.get("job_salary_string") or raw_job.get("job_salary") or ""
 
     # Workplace type
     workplace_type = "Onsite"

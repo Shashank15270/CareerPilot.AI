@@ -11,9 +11,9 @@ export default function Recommendations() {
   const hasData = recommendations && recommendations.length > 0
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12 relative min-h-[85vh]">
+    <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12 relative min-h-[85vh] overflow-hidden">
       {/* Glow highlight */}
-      <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
+      <div className="absolute top-0 right-0 translate-x-1/3 w-[260px] h-[260px] sm:w-[400px] sm:h-[400px] bg-accent/5 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
       
       {/* Return Path Header */}
       <div className="flex items-center justify-between mb-8">

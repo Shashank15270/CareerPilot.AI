@@ -1,9 +1,13 @@
 import json
 from typing import Dict, List, Any
 
-def build_resume_review_prompt(resume_text: str, resume_info: dict) -> str:
+def build_resume_review_prompt(resume_text: str, resume_info: dict, job_details: dict = None) -> str:
     """
     Builds the prompt for Feature 1: AI Resume Review.
+
+    When job_details is supplied, the ATS score is judged against that specific
+    posting. Without it the review was resume-only, so every job card showed an
+    identical ATS number no matter which role it was attached to.
     """
     resume_summary = {
         "name": resume_info.get("name", ""),
@@ -14,6 +18,35 @@ def build_resume_review_prompt(resume_text: str, resume_info: dict) -> str:
         "education_count": len(resume_info.get("education", [])),
     }
     
+    # Job-targeted section. Only present when the review is attached to a
+    # specific posting, which is what makes the ATS score vary per job.
+    job_block = ""
+    scoring_rule = (
+        '  "ats_compatibility_score": 78, // Integer 0-100: general ATS parse-ability'
+    )
+    if job_details:
+        job_block = f"""
+TARGET JOB — score the resume AGAINST THIS SPECIFIC POSTING:
+Title: {job_details.get('title', '')}
+Company: {job_details.get('company', '')}
+Description:
+\"\"\"
+{(job_details.get('description') or '')[:2000]}
+\"\"\"
+
+Scoring rules for this job:
+- "overall_score" = how strong this candidate is FOR THIS ROLE (0-100).
+- "ats_compatibility_score" = how well the resume would pass an ATS keyword
+  screen FOR THIS POSTING (0-100). Base it on overlap between the resume and the
+  job's required keywords, titles and technologies. A resume missing most of the
+  posting's core keywords MUST score low, even if it is well formatted.
+- "strengths"/"weaknesses" must reference THIS job's requirements specifically.
+- Do NOT give generic advice that would apply to any job.
+"""
+        scoring_rule = (
+            '  "ats_compatibility_score": 78, // Integer 0-100 for THIS posting'
+        )
+
     return f"""
 You are an expert ATS (Applicant Tracking System) reviewer and hiring consultant.
 Analyze the following resume details and raw text.
@@ -24,16 +57,16 @@ Resume summary details:
 
 Raw Resume Text:
 \"\"\"
-{resume_text}
+{(resume_text or "")[:4000]}
 \"\"\"
-
+{job_block}
 You MUST return a JSON object with the following structure:
 {{
   "overall_score": 85, // Integer score from 0 to 100
   "resume_summary": "Short 2-3 sentence professional summary...",
   "strengths": ["Strength 1", "Strength 2", ...],
   "weaknesses": ["Weakness 1", "Weakness 2", ...],
-  "ats_compatibility_score": 78, // Integer score from 0 to 100
+{scoring_rule},
   "formatting_suggestions": ["Suggestion 1", "Suggestion 2", ...],
   "missing_sections": ["Missing section 1", "Missing section 2", ...],
   "resume_improvement_suggestions": ["Suggestion 1", "Suggestion 2", ...],
@@ -66,7 +99,7 @@ Job Details:
 - Title: {job_details.get("title", "")}
 - Company: {job_details.get("company", "")}
 - Similarity Score: {job_details.get("similarity_score", 0.0)}
-- Description: {job_details.get("description", "")}
+- Description: {(job_details.get("description") or "")[:2000]}
 
 Generate a match explanation. You MUST return a JSON object matching this schema:
 {{
@@ -108,7 +141,7 @@ Candidate Skills:
 Job Description:
 - Title: {job_details.get("title", "")}
 - Company: {job_details.get("company", "")}
-- Description: {job_details.get("description", "")}
+- Description: {(job_details.get("description") or "")[:2000]}
 
 Compare their skills and generate recommendations to close the gaps.
 You MUST return a JSON object with this exact schema:
@@ -156,7 +189,7 @@ Candidate Profile:
 Job Details:
 - Title: {job_details.get("title", "")}
 - Company: {job_details.get("company", "")}
-- Description: {job_details.get("description", "")}
+- Description: {(job_details.get("description") or "")[:2000]}
 
 Generate a set of questions (at least 3 per category) categorized by type.
 Include:
@@ -217,7 +250,7 @@ Candidate Profile:
 Job Details:
 - Title: {job_details.get("title", "")}
 - Company: {job_details.get("company", "")}
-- Description: {job_details.get("description", "")}
+- Description: {(job_details.get("description") or "")[:2000]}
 
 You MUST return a JSON object with this exact schema:
 {{

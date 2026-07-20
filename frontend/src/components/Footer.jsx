@@ -9,7 +9,7 @@ export default function Footer() {
             <div className="p-1 rounded-md bg-primary/20 border border-primary/40 flex items-center justify-center">
               <Briefcase className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-extrabold text-md tracking-wide text-text font-display">
+            <span className="font-extrabold text-base tracking-wide text-text font-display">
               Antigravity<span className="text-accent font-semibold ml-0.5">AI</span>
             </span>
           </div>

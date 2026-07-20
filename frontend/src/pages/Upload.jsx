@@ -5,6 +5,7 @@ import { SlidersHorizontal, AlertCircle } from 'lucide-react'
 import UploadCard from '../components/UploadCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { getRecommendations } from '../services/api'
+import { INDIAN_CITIES, stateForCity } from '../constants/indiaCities'
 
 const PIPELINE_STEPS = [
   "Uploading Resume...",
@@ -26,7 +27,8 @@ export default function Upload() {
   const [showOptions, setShowOptions] = useState(false)
 
   // Advanced Filters State
-  const [country, setCountry] = useState('')
+  // Search scope is India-only; the country is fixed rather than user-selectable.
+  const [country] = useState('India')
   const [state, setState] = useState('')
   const [city, setCity] = useState('')
   const [experienceLevel, setExperienceLevel] = useState('')
@@ -118,10 +120,10 @@ export default function Upload() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 relative min-h-[80vh] flex flex-col justify-center">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 relative min-h-[80vh] overflow-hidden flex flex-col justify-center">
       
       {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[320px] h-[200px] sm:w-[600px] sm:h-[300px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
       <AnimatePresence mode="wait">
         {!isAnalyzing ? (
@@ -133,7 +135,7 @@ export default function Upload() {
             className="space-y-8"
           >
             <div className="text-center">
-              <h1 className="text-4xl font-extrabold text-text tracking-tight mb-3 font-display">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-text tracking-tight mb-3 font-display">
                 Analyze Your Profile
               </h1>
               <p className="text-muted text-base max-w-lg mx-auto leading-relaxed">
@@ -167,7 +169,7 @@ export default function Upload() {
                 <button
                   type="button"
                   onClick={() => setShowOptions(!showOptions)}
-                  className="flex items-center space-x-2 text-sm text-muted hover:text-white transition-colors py-2 px-3 rounded-lg border border-white/5 bg-white/[0.01] hover:bg-white/[0.04] mx-auto cursor-pointer"
+                  className="flex items-center space-x-2 text-sm text-muted hover:text-text transition-colors py-2 px-3 rounded-lg border border-zinc-200 bg-surface hover:bg-zinc-100 mx-auto cursor-pointer"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                   <span>{showOptions ? "Hide Advanced Options" : "Show Advanced Options"}</span>
@@ -181,7 +183,7 @@ export default function Upload() {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden mt-4"
                     >
-                      <div className="p-6 rounded-3xl bg-card border border-white/5 text-left space-y-6 shadow-2xl">
+                      <div className="p-4 sm:p-6 rounded-3xl bg-card border border-white/5 text-left space-y-6 shadow-2xl">
                         <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-white/5 pb-2">Target Job Search Criteria</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
@@ -219,7 +221,7 @@ export default function Upload() {
                             <select
                               value={topK}
                               onChange={(e) => setTopK(Number(e.target.value))}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold"
+                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold [&>option]:bg-white [&>option]:text-text"
                             >
                               <option value={3}>Top 3 Matches</option>
                               <option value={5}>Top 5 Matches</option>
@@ -234,17 +236,30 @@ export default function Upload() {
                             <label className="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest mb-2">
                               Country
                             </label>
+                            <div className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white/80 font-semibold flex items-center gap-2">
+                              <span aria-hidden="true">🇮🇳</span>
+                              India
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest mb-2">
+                              City
+                            </label>
                             <select
-                              value={country}
-                              onChange={(e) => setCountry(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold"
+                              value={city}
+                              onChange={(e) => {
+                                setCity(e.target.value);
+                                // State is derived, never typed — it drives the
+                                // "same state" fallback tier on the backend.
+                                setState(stateForCity(e.target.value));
+                              }}
+                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold [&>option]:bg-white [&>option]:text-text"
                             >
-                              <option value="">Any Country</option>
-                              <option value="India">India</option>
-                              <option value="United States">United States</option>
-                              <option value="Canada">Canada</option>
-                              <option value="United Kingdom">United Kingdom</option>
-                              <option value="Germany">Germany</option>
+                              <option value="">All of India</option>
+                              {INDIAN_CITIES.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
                             </select>
                           </div>
 
@@ -252,26 +267,9 @@ export default function Upload() {
                             <label className="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest mb-2">
                               State / Region
                             </label>
-                            <input
-                              type="text"
-                              value={state}
-                              onChange={(e) => setState(e.target.value)}
-                              placeholder="e.g. Karnataka"
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors placeholder:text-zinc-500 font-semibold"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest mb-2">
-                              City
-                            </label>
-                            <input
-                              type="text"
-                              value={city}
-                              onChange={(e) => setCity(e.target.value)}
-                              placeholder="e.g. Bangalore"
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors placeholder:text-zinc-500 font-semibold"
-                            />
+                            <div className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white/50">
+                              {state || 'Auto-detected from city'}
+                            </div>
                           </div>
 
                           {/* Row 3 */}
@@ -282,7 +280,7 @@ export default function Upload() {
                             <select
                               value={experienceLevel}
                               onChange={(e) => setExperienceLevel(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold"
+                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold [&>option]:bg-white [&>option]:text-text"
                             >
                               <option value="">Any Experience</option>
                               <option value="Entry Level">0–1 Years (Entry)</option>
@@ -299,7 +297,7 @@ export default function Upload() {
                             <select
                               value={employmentType}
                               onChange={(e) => setEmploymentType(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold"
+                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold [&>option]:bg-white [&>option]:text-text"
                             >
                               <option value="">Any Type</option>
                               <option value="Full-time">Full Time</option>
@@ -317,7 +315,7 @@ export default function Upload() {
                             <select
                               value={workplaceType}
                               onChange={(e) => setWorkplaceType(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold"
+                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 transition-colors cursor-pointer font-semibold [&>option]:bg-white [&>option]:text-text"
                             >
                               <option value="">Any Style</option>
                               <option value="Remote">Remote Only</option>

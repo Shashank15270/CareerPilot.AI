@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { Sparkles, Save, User, MapPin, Briefcase, Plus, X, ShieldAlert, Cpu } from 'lucide-react';
@@ -6,40 +6,58 @@ import * as api from '../services/api';
 
 export default function Settings() {
   const { user, refreshUser } = useAuth();
-  
-  if (!user) return null;
+
+  // NOTE: every hook must run on every render. Do not add an early `return` above
+  // this block — bailing out before these useState calls changes the hook count
+  // between renders and React throws "Rendered fewer hooks than expected",
+  // which unmounts the whole app. The `!user` guard lives after the hooks.
 
   // Profile States
-  const [name, setName] = useState(user.name || '');
-  const [location, setLocation] = useState(user.location || '');
-  const [experience, setExperience] = useState(user.experience || '');
-  const [skills, setSkills] = useState(user.skills || []);
+  const [name, setName] = useState(user?.name || '');
+  const [location, setLocation] = useState(user?.location || '');
+  const [experience, setExperience] = useState(user?.experience || '');
+  const [skills, setSkills] = useState(user?.skills || []);
   const [newSkill, setNewSkill] = useState('');
-  const [preferredRoles, setPreferredRoles] = useState(user.preferred_roles || []);
+  const [preferredRoles, setPreferredRoles] = useState(user?.preferred_roles || []);
   const [newRole, setNewRole] = useState('');
 
   // API Preferences States
-  const [groqModel, setGroqModel] = useState(user.api_preferences?.groq_model || 'llama-3.3-70b-versatile');
-  const [jobCountry, setJobCountry] = useState(user.api_preferences?.job_country || 'India');
-  const [targetCount, setTargetCount] = useState(user.api_preferences?.target_count || 10);
+  const [groqModel, setGroqModel] = useState(user?.api_preferences?.groq_model || 'llama-3.3-70b-versatile');
+  const [jobCountry, setJobCountry] = useState(user?.api_preferences?.job_country || 'India');
+  const [targetCount, setTargetCount] = useState(user?.api_preferences?.target_count || 10);
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingApi, setSavingApi] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
   const [apiMessage, setApiMessage] = useState('');
 
+  // Resync the form whenever the authoritative user object changes (e.g. after
+  // refreshUser() following a save), so the fields reflect what the server stored.
+  useEffect(() => {
+    if (!user) return;
+    setName(user.name || '');
+    setLocation(user.location || '');
+    setExperience(user.experience || '');
+    setSkills(user.skills || []);
+    setPreferredRoles(user.preferred_roles || []);
+    setGroqModel(user.api_preferences?.groq_model || 'llama-3.3-70b-versatile');
+    setJobCountry(user.api_preferences?.job_country || 'India');
+    setTargetCount(user.api_preferences?.target_count || 10);
+  }, [user]);
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setSavingProfile(true);
     setProfileMessage('');
     try {
-      await api.updateProfile({
-        name,
-        location,
-        experience,
-        skills,
-        preferred_roles: preferredRoles
-      });
+      // Send only fields the user actually filled in. The backend treats any
+      // non-null value as intentional, so posting '' would wipe stored values.
+      const payload = { skills, preferred_roles: preferredRoles };
+      if (name.trim()) payload.name = name.trim();
+      if (location.trim()) payload.location = location.trim();
+      if (experience) payload.experience = experience;
+
+      await api.updateProfile(payload);
       await refreshUser();
       setProfileMessage('Profile settings saved successfully.');
     } catch (err) {
@@ -55,12 +73,12 @@ export default function Settings() {
     setSavingApi(true);
     setApiMessage('');
     try {
-      await api.updateProfile({
-        api_preferences: {
-          groq_model: groqModel,
-          job_country: jobCountry,
-          target_count: parseInt(targetCount, 10)
-        }
+      // PUT /auth/profile ignores api_preferences entirely (it is not on the
+      // UserProfileUpdate model), so this must go to the dedicated endpoint.
+      await api.updateApiSettings({
+        groq_model: groqModel,
+        job_country: jobCountry,
+        target_count: parseInt(targetCount, 10)
       });
       await refreshUser();
       setApiMessage('API & System settings saved successfully.');
@@ -96,13 +114,16 @@ export default function Settings() {
     setPreferredRoles(preferredRoles.filter(r => r !== roleToRemove));
   };
 
+  // Safe here: this sits below every hook, so the hook count stays constant.
+  if (!user) return null;
+
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12 relative min-h-[85vh] text-left">
-      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 relative min-h-[85vh] text-left overflow-hidden">
+      <div className="absolute top-1/4 left-1/4 w-[260px] h-[260px] sm:w-[400px] sm:h-[400px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
       
       <div className="space-y-8">
         <div className="border-b border-zinc-200 pb-6">
-          <h1 className="text-3xl font-black text-text tracking-tight flex items-center gap-2 font-display">
+          <h1 className="text-2xl sm:text-3xl font-black text-text tracking-tight flex items-center gap-2 font-display">
             <Sparkles className="h-6 w-6 text-primary" />
             Config & Settings
           </h1>
@@ -111,7 +132,7 @@ export default function Settings() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
           
           {/* Form 1: Profile customization */}
           <motion.div
@@ -120,13 +141,13 @@ export default function Settings() {
             className="p-6 rounded-3xl bg-card border border-white/5 shadow-lg space-y-6 flex flex-col justify-between"
           >
             <div className="space-y-4">
-              <h3 className="text-md font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <User className="h-4.5 w-4.5 text-primary" />
+              <h3 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
                 Candidate Profile
               </h3>
               
               {profileMessage && (
-                <div className={`p-3 rounded-xl text-xs font-semibold ${profileMessage.includes('failed') ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-primary/10 border border-primary/20 text-primary'}`}>
+                <div className={`p-3 rounded-xl text-xs font-semibold ${profileMessage.toLowerCase().includes('failed') ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-primary/10 border border-primary/20 text-primary'}`}>
                   {profileMessage}
                 </div>
               )}
@@ -146,7 +167,7 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] text-zinc-400 font-extrabold uppercase tracking-widest block">Location</label>
                     <div className="relative">
@@ -168,7 +189,7 @@ export default function Settings() {
                       <select
                         value={experience}
                         onChange={(e) => setExperience(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2.5 bg-zinc-900 border border-white/5 focus:border-primary/50 text-white text-xs font-semibold rounded-xl outline-none transition-all appearance-none"
+                        className="w-full pl-9 pr-4 py-2.5 bg-zinc-900 border border-white/5 focus:border-primary/50 text-white text-xs font-semibold rounded-xl outline-none transition-all appearance-none [&>option]:bg-white [&>option]:text-text"
                       >
                         <option value="">Select Level</option>
                         <option value="Entry Level">Entry Level</option>
@@ -260,13 +281,13 @@ export default function Settings() {
             className="p-6 rounded-3xl bg-card border border-white/5 shadow-lg space-y-6 flex flex-col justify-between"
           >
             <div className="space-y-4">
-              <h3 className="text-md font-bold text-white uppercase tracking-wider flex items-center gap-2 font-display">
-                <Cpu className="h-4.5 w-4.5 text-primary" />
+              <h3 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2 font-display">
+                <Cpu className="h-4 w-4 text-primary" />
                 System & AI config
               </h3>
 
               {apiMessage && (
-                <div className={`p-3 rounded-xl text-xs font-semibold ${apiMessage.includes('failed') ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-primary/20 border border-primary/40 text-white'}`}>
+                <div className={`p-3 rounded-xl text-xs font-semibold ${apiMessage.toLowerCase().includes('failed') ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-primary/20 border border-primary/40 text-white'}`}>
                   {apiMessage}
                 </div>
               )}
@@ -279,7 +300,7 @@ export default function Settings() {
                     <select
                       value={groqModel}
                       onChange={(e) => setGroqModel(e.target.value)}
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/10 focus:border-primary/50 text-white text-xs font-semibold rounded-xl outline-none transition-all cursor-pointer"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/10 focus:border-primary/50 text-white text-xs font-semibold rounded-xl outline-none transition-all cursor-pointer [&>option]:bg-white [&>option]:text-text"
                     >
                       <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Recommended)</option>
                       <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Fast)</option>

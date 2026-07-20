@@ -3,12 +3,18 @@ import logging
 import re
 from typing import List, Dict, Any, Optional
 
-from app.services.job_sources.adzuna import AdzunaSource
 from app.services.job_sources.jsearch import JSearchSource
-from app.services.job_sources.remotive import RemotiveSource
-from app.services.job_sources.wellfound import WellfoundSource
-from app.services.job_sources.themuse import TheMuseSource
 from app.services.job_sources.job_normalizer import normalize_job
+from app.config.india import (
+    COUNTRY_NAME,
+    CITY_ALIASES,
+    TIER_EXACT_CITY,
+    TIER_SAME_STATE,
+    TIER_ELSEWHERE,
+    canonical_city,
+    state_for_city,
+    looks_indian,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +44,11 @@ def _are_locations_similar(loc1: str, loc2: str) -> bool:
     l2 = _normalize_string(loc2)
     
     if not l1 or not l2:
-        return True # Default to match if missing location details
-        
+        # Previously returned True, which collapsed every job with a missing
+        # location into a single "duplicate". Unknown locations are not evidence
+        # of a match, so treat them as distinct.
+        return False
+
     # If one contains the other, or they share a major word (other than common fillers)
     words1 = set(l1.split())
     words2 = set(l2.split())
@@ -103,14 +112,40 @@ def deduplicate_jobs(jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     logger.info(f"Deduplication completed: {len(jobs)} total -> {len(unique_jobs)} unique listings.")
     return list(unique_jobs.values())
 
+def _assign_region_tier(job: Dict[str, Any], city: str, state: str) -> int:
+    """
+    Grades how well a job matches the requested region.
+
+    This is deliberately non-destructive: out-of-region jobs are ranked lower
+    rather than dropped, so the caller can lead with exact-region matches and
+    then top up to top_k with nearby and nationwide listings.
+    """
+    job_loc = (job.get("location") or "").lower()
+
+    if city:
+        target = canonical_city(city)
+        if target and target.lower() in job_loc:
+            return TIER_EXACT_CITY
+        # Match the alias the board actually published, e.g. "Bangalore".
+        for variant, canonical in CITY_ALIASES.items():
+            if canonical == target and variant in job_loc:
+                return TIER_EXACT_CITY
+
+    target_state = state or (state_for_city(city) if city else "")
+    if target_state and target_state.lower() in job_loc:
+        return TIER_SAME_STATE
+
+    return TIER_ELSEWHERE
+
+
 class JobAggregator:
     def __init__(self):
+        # India-only scope: JSearch is the single live source. The other
+        # provider modules remain in the tree but are intentionally not
+        # registered — Wellfound was static sample data, Remotive is
+        # remote-only, and Adzuna/The Muse skew heavily non-India.
         self.sources = {
-            "Adzuna": AdzunaSource(),
             "JSearch": JSearchSource(),
-            "Remotive": RemotiveSource(),
-            "Wellfound": WellfoundSource(),
-            "The Muse": TheMuseSource()
         }
 
     async def aggregate_jobs(
@@ -132,23 +167,30 @@ class JobAggregator:
         """
         Queries all sources concurrently, normalizes, deduplicates, and returns unified list.
         """
-        # Construct pre-filter location string if empty
+        # The search is India-only, so the country argument is informational.
+        # What actually steers the provider query is the city.
+        target_city = canonical_city(city) if city else ""
         if not location:
-            loc_parts = [p for p in [city, state, country] if p]
-            location = ", ".join(loc_parts)
+            location = target_city
 
-        # Calculate limit per source to give a balanced merge representation
-        source_limit = max(limit // 2, 20)
-        
+        # Single source now, so it gets the whole budget rather than limit // 2.
+        source_limit = max(limit, 20)
+
         tasks = []
         source_names = list(self.sources.keys())
-        
+
         for name, source in self.sources.items():
-            tasks.append(self._safe_fetch(name, source, query, location, source_limit))
+            tasks.append(
+                self._safe_fetch(
+                    name, source, query, location, source_limit,
+                    employment_types=employment_types,
+                    workplace_types=workplace_types,
+                )
+            )
 
         # Run concurrent calls
         results = await asyncio.gather(*tasks)
-        
+
         # Merge all raw lists, normalizing them as they enter
         all_normalized_jobs = []
         for name, raw_list in zip(source_names, results):
@@ -160,17 +202,26 @@ class JobAggregator:
                 except Exception as exc:
                     logger.error(f"Failed to normalize raw job from {name}: {exc}")
 
-        # Remove duplicates
-        deduplicated = deduplicate_jobs(all_normalized_jobs)
+        # Hard India gate: anything that does not resolve to India is dropped
+        # outright, before any other filtering or ranking.
+        india_jobs = [
+            j for j in all_normalized_jobs
+            if looks_indian(j.get("location") or "", j.get("country") or "")
+        ]
+        dropped = len(all_normalized_jobs) - len(india_jobs)
+        if dropped:
+            logger.info(f"Dropped {dropped} non-India listings ({COUNTRY_NAME}-only scope).")
 
-        # Apply post-aggregation filters
+        # Remove duplicates
+        deduplicated = deduplicate_jobs(india_jobs)
+
+        # Apply post-aggregation filters. Note city/state are NOT passed here:
+        # region is handled by tiering below so out-of-city jobs survive as
+        # top-up candidates instead of being discarded.
         filtered_jobs = self._apply_filters(
             deduplicated,
             workplace_types=workplace_types,
             experience_levels=experience_levels,
-            country=country,
-            state=state,
-            city=city,
             employment_types=employment_types,
             salary_min=salary_min,
             company_name=company_name,
@@ -178,12 +229,43 @@ class JobAggregator:
             industry=industry
         )
 
-        logger.info(f"Final aggregated count: {len(filtered_jobs)} jobs.")
-        return filtered_jobs[:limit]
+        # Annotate each job with how well it matches the requested region.
+        for job in filtered_jobs:
+            job["_region_tier"] = _assign_region_tier(job, target_city, state or "")
 
-    async def _safe_fetch(self, name: str, source: Any, query: str, location: str, limit: int) -> list:
+        exact = sum(1 for j in filtered_jobs if j["_region_tier"] == TIER_EXACT_CITY)
+        same_state = sum(1 for j in filtered_jobs if j["_region_tier"] == TIER_SAME_STATE)
+        logger.info(
+            f"Final aggregated count: {len(filtered_jobs)} jobs "
+            f"({exact} exact-city, {same_state} same-state, "
+            f"{len(filtered_jobs) - exact - same_state} elsewhere in India)."
+        )
+
+        # Return the full tiered pool. The caller applies top_k after semantic
+        # ranking, so truncating here would throw away better matches.
+        return filtered_jobs
+
+    async def _safe_fetch(
+        self,
+        name: str,
+        source: Any,
+        query: str,
+        location: str,
+        limit: int,
+        employment_types: Optional[List[str]] = None,
+        workplace_types: Optional[List[str]] = None,
+    ) -> list:
         """Executes source fetch inside a try-catch block to prevent crashing the aggregator."""
         try:
+            return await source.fetch_jobs(
+                query=query,
+                location=location,
+                limit=limit,
+                employment_types=employment_types,
+                workplace_types=workplace_types,
+            )
+        except TypeError:
+            # Source predates the extended signature; fall back to the basics.
             return await source.fetch_jobs(query=query, location=location, limit=limit)
         except Exception as e:
             logger.exception(f"Error fetching jobs from source '{name}': {str(e)}")
@@ -194,16 +276,16 @@ class JobAggregator:
         jobs: List[Dict[str, Any]],
         workplace_types: Optional[List[str]] = None,
         experience_levels: Optional[List[str]] = None,
-        country: Optional[str] = None,
-        state: Optional[str] = None,
-        city: Optional[str] = None,
         employment_types: Optional[List[str]] = None,
         salary_min: Optional[int] = None,
         company_name: Optional[str] = None,
         skills: Optional[List[str]] = None,
         industry: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Filters the unified job list by workplace type, experience level, and country."""
+        """
+        Filters the unified job list by attributes that are genuinely
+        disqualifying. Region is handled separately via tiering.
+        """
         filtered = []
         for job in jobs:
             # 1. Workplace Type Filter (Remote / Hybrid / Onsite)
@@ -213,42 +295,36 @@ class JobAggregator:
                     
             # 2. Experience Level Filter (Entry Level / Mid Level / Senior Level / Lead / Executive)
             if experience_levels:
-                # Experience levels match if any input matches experience level normalized string
-                # Input format might be like '0-1 Years', but normalized experienced level is 'Entry Level' etc.
-                # Let's map experience levels standard strings:
+                # The UI already sends canonical values ("Entry Level", "Mid Level",
+                # "Senior Level", "Lead"), so match them directly. The keyword pass
+                # below is only a fallback for free-form input like "0-1 Years";
+                # previously "Lead" matched no branch at all and silently disabled
+                # the whole filter.
+                canonical = {"Entry Level", "Mid Level", "Senior Level", "Lead", "Executive"}
                 mapped_levels = []
                 for exp_in in experience_levels:
-                    if '0' in exp_in or '1' in exp_in or 'entry' in exp_in.lower():
+                    if exp_in in canonical:
+                        mapped_levels.append(exp_in)
+                        continue
+                    low = exp_in.lower()
+                    if 'entry' in low or 'junior' in low or '0' in exp_in:
                         mapped_levels.append('Entry Level')
-                    elif '3' in exp_in or 'mid' in exp_in.lower():
+                    elif 'mid' in low:
                         mapped_levels.append('Mid Level')
-                    elif '5' in exp_in or 'sr' in exp_in.lower() or 'senior' in exp_in.lower():
+                    elif 'senior' in low or 'sr' in low:
                         mapped_levels.append('Senior Level')
-                
+                    elif 'lead' in low or 'principal' in low:
+                        mapped_levels.append('Lead')
+                    elif 'exec' in low or 'director' in low:
+                        mapped_levels.append('Executive')
+
                 if mapped_levels and job.get("experience_level") not in mapped_levels:
                     continue
 
-            # 3. Country Filter
-            if country:
-                job_country = job.get("country") or ""
-                job_loc = job.get("location") or ""
-                if country.lower() not in job_country.lower() and country.lower() not in job_loc.lower():
-                    continue
+            # Country/state/city are handled by the India gate and the region
+            # tiering in aggregate_jobs, not by dropping rows here.
 
-            # 4. State Filter
-            if state:
-                job_loc = job.get("location") or ""
-                job_desc = job.get("description") or ""
-                if state.lower() not in job_loc.lower() and state.lower() not in job_desc.lower():
-                    continue
-
-            # 5. City Filter
-            if city:
-                job_loc = job.get("location") or ""
-                if city.lower() not in job_loc.lower():
-                    continue
-
-            # 6. Employment Type Filter
+            # 3. Employment Type Filter
             if employment_types:
                 if job.get("employment_type") not in employment_types:
                     continue

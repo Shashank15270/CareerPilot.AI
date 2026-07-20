@@ -1,4 +1,7 @@
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 from pathlib import Path
 
 # Define common section headings mapping to their normalized key names.
@@ -118,6 +121,20 @@ def extract_name(text: str) -> str:
     return ""
 
 
+# Labels that look like top-level section headings but are really category
+# labels *within* a section. Without this, "Languages:" inside SKILLS would end
+# the skills section and divert the rest of it into spoken languages.
+_SUBHEADERS_BY_SECTION = {
+    "skills": {
+        "languages", "programming languages", "technologies", "tools",
+        "frameworks", "libraries", "databases", "cloud", "devops", "platforms",
+        "frontend", "backend", "testing", "other",
+    },
+    "projects": {"technologies", "tools", "tech stack"},
+    "experience": {"technologies", "tools", "tech stack"},
+}
+
+
 def _normalize_heading(line: str) -> str:
     """
     Helper function to clean and normalize a heading line.
@@ -183,6 +200,27 @@ def extract_sections(text: str) -> dict:
             if normalized in keyword_map:
                 current_section = keyword_map[normalized]
                 continue
+
+        # Inline heading form: "Skills: Python, React, AWS" — the heading and its
+        # content share one line. Compact resumes use this constantly, and
+        # treating it as body text used to leave every section empty.
+        if ":" in cleaned_line:
+            head, _, remainder = cleaned_line.partition(":")
+            if len(head.split()) <= 6:
+                normalized_head = _normalize_heading(head)
+                target = keyword_map.get(normalized_head)
+                # Guard against sub-headers inside a section stealing the flow.
+                # "Languages: Python, Go" under SKILLS is a category label, not
+                # the start of the spoken-languages section.
+                is_subheader = (
+                    current_section is not None
+                    and normalized_head in _SUBHEADERS_BY_SECTION.get(current_section, set())
+                )
+                if target and not is_subheader:
+                    current_section = target
+                    if remainder.strip():
+                        section_lines[current_section].append(remainder.strip())
+                    continue
 
         # Append line to currently active section
         if current_section:
@@ -657,6 +695,70 @@ def parse_skills(text: str):
     return structured_skills
 
 
+# Technologies worth recognising anywhere in the document when the skills
+# section cannot be located. Ordered longest-first at match time so "React Native"
+# wins over "React".
+_KNOWN_SKILLS = [
+    "JavaScript", "TypeScript", "Python", "Java", "Kotlin", "Swift", "Go", "Golang",
+    "Rust", "Ruby", "PHP", "Scala", "Perl", "C++", "C#", "C", "R", "MATLAB",
+    "React Native", "React", "Angular", "Vue", "Svelte", "Next.js", "Nuxt",
+    "Node.js", "Express", "Django", "Flask", "FastAPI", "Spring Boot", "Spring",
+    ".NET", "Laravel", "Rails", "jQuery", "Redux", "HTML", "CSS", "SASS",
+    "Tailwind", "Bootstrap", "Material UI",
+    "PostgreSQL", "MySQL", "SQLite", "MongoDB", "Redis", "Cassandra", "DynamoDB",
+    "Elasticsearch", "Oracle", "SQL Server", "Firebase", "Supabase", "SQL", "NoSQL",
+    "AWS", "Azure", "GCP", "Google Cloud", "Docker", "Kubernetes", "Terraform",
+    "Ansible", "Jenkins", "CI/CD", "GitHub Actions", "GitLab", "Git", "Linux",
+    "Nginx", "Kafka", "RabbitMQ", "GraphQL", "REST", "gRPC", "Microservices",
+    "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "Keras",
+    "Scikit-learn", "Pandas", "NumPy", "OpenCV", "NLP", "LLM", "Hugging Face",
+    "LangChain", "Power BI", "Tableau", "Excel", "Spark", "Hadoop", "Airflow",
+    "Agile", "Scrum", "Jira", "Figma",
+]
+
+
+def _has_any_skills(skills) -> bool:
+    """True when the parsed skills structure holds at least one entry."""
+    if not skills:
+        return False
+    if isinstance(skills, dict):
+        return any(v for v in skills.values())
+    if isinstance(skills, list):
+        return len(skills) > 0
+    return bool(skills)
+
+
+def _scan_skills_from_text(text: str) -> list:
+    """
+    Finds known technologies anywhere in the resume. Used only as a fallback
+    when section-based parsing found no skills at all.
+    """
+    if not text:
+        return []
+    found = []
+    lowered = text.lower()
+    for skill in sorted(_KNOWN_SKILLS, key=len, reverse=True):
+        s = skill.lower()
+        # Symbol-bearing names break \b, so match them literally.
+        if any(ch in s for ch in "+#."):
+            hit = s in lowered
+        else:
+            hit = re.search(r'\b' + re.escape(s) + r'\b', lowered) is not None
+        if hit and not any(skill.lower() in f.lower() for f in found):
+            found.append(skill)
+    return found
+
+
+def _fallback_summary(text: str, max_chars: int = 600) -> str:
+    """Uses the opening lines of the resume when no summary section exists."""
+    if not text:
+        return ""
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+    # Skip the name/contact block at the very top.
+    body = [ln for ln in lines[:12] if len(ln.split()) > 3]
+    return " ".join(body)[:max_chars]
+
+
 def extract_resume_information(resume_text: str) -> dict:
     """
     Extracts structured data from raw resume text, mapping contact details
@@ -684,12 +786,30 @@ def extract_resume_information(resume_text: str) -> dict:
     certifications = parse_certifications(sections["certifications"])
     skills = parse_skills(sections["skills"])
 
+    # Safety net: if no skills section was recognised, scan the whole document
+    # for known technologies. Without this, an unusual resume layout yields an
+    # empty profile and every AI analysis degrades to generic filler.
+    if not _has_any_skills(skills):
+        discovered = _scan_skills_from_text(resume_text)
+        if discovered:
+            logger.info(
+                f"No skills section parsed; recovered {len(discovered)} skills "
+                f"by scanning the full resume text."
+            )
+            skills = {"other": discovered}
+
+    # Same idea for the summary: fall back to the opening prose so the LLM has
+    # some candidate context rather than an empty string.
+    summary = sections["summary"]
+    if not summary.strip():
+        summary = _fallback_summary(resume_text)
+
     # Construct the final unified schema
     structured_resume = {
         "name": name,
         "email": email,
         "phone": phone,
-        "summary": sections["summary"],
+        "summary": summary,
         "skills": skills,
         "experience": experience,
         "education": education,

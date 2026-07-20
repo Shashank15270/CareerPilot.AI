@@ -31,15 +31,15 @@ export default function Register() {
   };
 
   return (
-    <div className="relative min-h-[85vh] flex items-center justify-center px-4 py-12">
+    <div className="relative min-h-[85vh] flex items-center justify-center px-4 py-12 overflow-hidden">
       {/* Background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-[10000ms]"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-primary/5 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-[10000ms]"></div>
 
-      <div className="w-full max-w-md bg-card rounded-3xl p-8 shadow-2xl relative overflow-hidden border border-white/5 text-left">
+      <div className="w-full max-w-md bg-card rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden border border-white/5 text-left">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
         
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight font-display mb-2">Create Account</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display mb-2">Create Account</h1>
           <p className="text-zinc-400 text-xs font-semibold">Join today to get tailored job matching and career evaluations</p>
         </div>
 

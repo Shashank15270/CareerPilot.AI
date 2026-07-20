@@ -3,6 +3,11 @@ import * as api from '../services/api';
 
 const AuthContext = createContext();
 
+const clearStoredSession = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refresh_token');
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +23,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Failed to load user session profile:', err);
-      localStorage.removeItem('token');
+      clearStoredSession();
       setUser(null);
     } finally {
       setLoading(false);
@@ -26,19 +31,29 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Let the axios response interceptor drop React state when a refresh fails.
+    api.setSessionExpiredHandler(() => setUser(null));
     fetchProfile();
+    return () => api.setSessionExpiredHandler(null);
   }, []);
+
+  const storeSession = (data) => {
+    localStorage.setItem('token', data.access_token);
+    if (data.refresh_token) {
+      localStorage.setItem('refresh_token', data.refresh_token);
+    }
+  };
 
   const loginUser = async (credentials) => {
     const data = await api.login(credentials);
-    localStorage.setItem('token', data.access_token);
+    storeSession(data);
     await fetchProfile();
     return data;
   };
 
   const registerUser = async (userData) => {
     const data = await api.register(userData);
-    localStorage.setItem('token', data.access_token);
+    storeSession(data);
     await fetchProfile();
     return data;
   };
@@ -49,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Failed to log out session on server:', err);
     } finally {
-      localStorage.removeItem('token');
+      clearStoredSession();
       setUser(null);
     }
   };

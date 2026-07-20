@@ -271,3 +271,4 @@ def delete_account(current_user: User = Depends(get_current_user), db: Session =
     # 2. Delete user record (cascades database deletes cleanly)
     db.delete(current_user)
     db.commit()
+    return {"message": "Account and all related data deleted permanently."}

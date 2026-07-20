@@ -32,7 +32,14 @@ def get_resumes_for_user(db: Session, user_id: int) -> List[Resume]:
     return db.query(Resume).filter(Resume.user_id == user_id).order_by(desc(Resume.created_at)).all()
 
 def get_latest_resume_for_user(db: Session, user_id: int) -> Optional[Resume]:
-    return db.query(Resume).filter(Resume.user_id == user_id).order_by(desc(Resume.created_at)).first()
+    # id is the tiebreaker: two uploads within the same timestamp resolution
+    # would otherwise order arbitrarily and could return the older resume.
+    return (
+        db.query(Resume)
+        .filter(Resume.user_id == user_id)
+        .order_by(desc(Resume.created_at), desc(Resume.id))
+        .first()
+    )
 
 # Resume Version operations
 def create_resume_version(db: Session, resume_id: int, version: int, resume_info_json: dict) -> ResumeVersion:
@@ -46,7 +53,12 @@ def get_latest_resume_version_for_user(db: Session, user_id: int) -> Optional[Re
     latest_resume = get_latest_resume_for_user(db, user_id)
     if not latest_resume:
         return None
-    return db.query(ResumeVersion).filter(ResumeVersion.resume_id == latest_resume.id).order_by(desc(ResumeVersion.version)).first()
+    return (
+        db.query(ResumeVersion)
+        .filter(ResumeVersion.resume_id == latest_resume.id)
+        .order_by(desc(ResumeVersion.version), desc(ResumeVersion.id))
+        .first()
+    )
 
 # Recommendation operations
 def create_recommendation(db: Session, user_id: int, resume_version_id: int, query: Optional[str], results_json: list) -> Recommendation:

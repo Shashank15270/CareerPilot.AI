@@ -5,7 +5,7 @@ export default function FeatureCard({ icon: Icon, title, description }) {
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className="p-6 rounded-2xl glass-card flex flex-col items-start text-left relative overflow-hidden transition-all duration-300 group hover:border-primary/25 hover:shadow-[0_0_30px_rgba(112,79,56,0.08)] bg-card"
+      className="p-5 sm:p-6 rounded-2xl glass-card flex flex-col items-start text-left relative overflow-hidden transition-all duration-300 group hover:border-primary/25 hover:shadow-[0_0_30px_rgba(112,79,56,0.08)] bg-card"
     >
       <div className="p-3 rounded-xl bg-primary/20 border border-primary/40 text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
         <Icon className="h-5 w-5" />

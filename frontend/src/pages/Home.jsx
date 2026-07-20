@@ -69,7 +69,7 @@ export default function Home() {
       <Hero />
 
       {/* Features Section */}
-      <section className="py-20 border-t border-zinc-200 relative">
+      <section className="py-12 sm:py-20 border-t border-zinc-200 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-text mb-4">
@@ -99,7 +99,7 @@ export default function Home() {
       {/* How It Works Section */}
       <section id="how-it-works" className="py-20 border-t border-zinc-200 bg-surface/60 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-20">
+          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-20">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-text mb-4">
               Real-Time Pipeline Stages
             </h2>
@@ -133,7 +133,7 @@ export default function Home() {
       </section>
 
       {/* Call to Action Section */}
-      <section className="py-20 border-t border-zinc-200 relative">
+      <section className="py-12 sm:py-20 border-t border-zinc-200 relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="p-8 sm:p-12 rounded-3xl bg-card shadow-2xl relative overflow-hidden text-left border border-white/5">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>

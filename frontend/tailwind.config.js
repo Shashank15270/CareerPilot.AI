@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        // Small phones (iPhone SE / Mini) need a step below Tailwind's sm:640.
+        xs: '400px',
+      },
       colors: {
         primary: "#704F38",     // Deep Hazelnut
         secondary: "#1B2A4A",   // Deep Sapphire

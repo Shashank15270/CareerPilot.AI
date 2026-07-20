@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 import Home from './pages/Home';
@@ -20,9 +21,16 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-background text-text flex flex-col justify-between selection:bg-primary selection:text-white">
-          <Navbar />
+        {/* overflow-x-hidden is a safety net: several pages use oversized
+            decorative blur circles that would otherwise cause sideways scroll. */}
+        <div className="min-h-screen overflow-x-hidden bg-background text-text flex flex-col justify-between selection:bg-primary selection:text-white">
+          {/* Separate boundary: the Navbar renders outside <Routes>, so an error
+              here would otherwise take down every page in the app. */}
+          <ErrorBoundary>
+            <Navbar />
+          </ErrorBoundary>
           <main className="flex-grow">
+            <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
@@ -62,6 +70,7 @@ export default function App() {
               <Route path="/404" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/404" replace />} />
             </Routes>
+            </ErrorBoundary>
           </main>
           <Footer />
         </div>

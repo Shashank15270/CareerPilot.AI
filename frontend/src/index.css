@@ -106,7 +106,28 @@
   transform: translateY(0);
 }
 
+/* iOS Safari zooms the viewport when focusing any input under 16px. Force 16px
+   on touch-ish widths; the design's smaller sizes resume at sm and above. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Scoped HTML styles inside job descriptions to combat Tailwind CSS resets */
+.job-description-html {
+  /* AI-generated descriptions can contain long unbroken URLs that would
+     otherwise push the card wider than the viewport. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.job-description-html a {
+  overflow-wrap: anywhere;
+}
+
 .job-description-html p {
   margin-bottom: 0.75rem;
 }

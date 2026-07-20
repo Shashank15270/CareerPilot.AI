@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Stateful Mock Interview Sessions
 MOCK_INTERVIEW_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
-async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 60.0) -> dict:
+async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 30.0) -> dict:
     """
     Calls the Groq API with retry logic, timeout handling, invalid API key handling,
     rate limit handling, and JSON parsing error fallback.
@@ -61,19 +61,45 @@ async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 60.0) ->
 
     for attempt in range(1, retries + 1):
         try:
-            async with httpx.AsyncClient(timeout=timeout_sec) as client:
+            # Separate connect timeout from read timeout: reaching Groq should be
+            # fast, but generating a long JSON answer legitimately is not. A slow
+            # connect means the network is down, and waiting the full read budget
+            # for that just makes the user stare at a spinner.
+            timeouts = httpx.Timeout(timeout_sec, connect=8.0)
+            async with httpx.AsyncClient(timeout=timeouts) as client:
                 logger.info(f"Groq API request attempt {attempt}/{retries} using model {model}")
                 response = await client.post(url, headers=headers, json=payload)
 
-                # Handle Rate Limits (HTTP 429)
+                # Handle Rate Limits (HTTP 429).
+                #
+                # Groq's free tier caps tokens-per-minute (12k), not just
+                # request count. Blindly re-sending a ~1.2k-token prompt three
+                # times makes the exact problem worse, so honour the server's
+                # retry-after and give up quickly when the wait is long.
                 if response.status_code == 429:
-                    logger.warning(f"Groq API rate limit hit on attempt {attempt}. Retrying in 5 seconds...")
-                    if attempt == retries:
+                    retry_after = response.headers.get("retry-after")
+                    try:
+                        wait_s = float(retry_after) if retry_after else 6.0
+                    except ValueError:
+                        wait_s = 6.0
+
+                    remaining = response.headers.get("x-ratelimit-remaining-tokens", "?")
+                    logger.warning(
+                        f"Groq rate limit on attempt {attempt}/{retries} "
+                        f"(tokens remaining: {remaining}, retry-after: {wait_s}s)"
+                    )
+
+                    # Waiting longer than this would leave the user staring at a
+                    # spinner; better to surface an actionable message.
+                    if attempt == retries or wait_s > 20:
                         raise HTTPException(
                             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                            detail="Groq API rate limit exceeded. Please wait a moment and try again."
+                            detail=(
+                                f"AI rate limit reached (Groq free tier allows ~12k tokens/min). "
+                                f"Please wait about {int(wait_s) + 1}s and try again."
+                            )
                         )
-                    await asyncio.sleep(5.0)
+                    await asyncio.sleep(wait_s)
                     continue
 
                 response.raise_for_status()
@@ -110,6 +136,28 @@ async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 60.0) ->
                 raise TimeoutError("Groq API request timed out. Please try again.") from te
             await asyncio.sleep(1.0)
 
+        except HTTPException:
+            # Already a well-formed API error (e.g. the 429 raised above).
+            # Without this it fell through to the generic handler below and was
+            # re-wrapped as a ValueError, surfacing to the user as a confusing
+            # 500 instead of "rate limited, try again shortly".
+            raise
+
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as ce:
+            # Network-level failure reaching Groq (DNS, TLS handshake, dropped
+            # connection). Retry quickly with a short backoff rather than
+            # burning the full read timeout on each attempt.
+            logger.warning(
+                f"Network error reaching Groq on attempt {attempt}/{retries}: "
+                f"{type(ce).__name__}"
+            )
+            if attempt == retries:
+                raise ConnectionError(
+                    "Could not reach the Groq API. Check your internet connection "
+                    "and try again."
+                ) from ce
+            await asyncio.sleep(1.5 * attempt)
+
         except Exception as e:
             logger.exception(f"Unexpected error in Groq API call on attempt {attempt}: {str(e)}")
             if attempt == retries:
@@ -123,11 +171,12 @@ async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 60.0) ->
 # Career Coach Services
 # -------------------------------------------------------------
 
-async def review_resume(resume_text: str, resume_info: dict) -> dict:
+async def review_resume(resume_text: str, resume_info: dict, job_details: dict = None) -> dict:
     """
-    Feature 1: Review resume.
+    Feature 1: Review resume. When job_details is given, the scores are
+    tailored to that specific posting rather than being generic.
     """
-    prompt = build_resume_review_prompt(resume_text, resume_info)
+    prompt = build_resume_review_prompt(resume_text, resume_info, job_details)
     return await call_groq(prompt)
 
 
