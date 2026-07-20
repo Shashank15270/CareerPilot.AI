@@ -44,9 +44,6 @@ def _are_locations_similar(loc1: str, loc2: str) -> bool:
     l2 = _normalize_string(loc2)
     
     if not l1 or not l2:
-        # Previously returned True, which collapsed every job with a missing
-        # location into a single "duplicate". Unknown locations are not evidence
-        # of a match, so treat them as distinct.
         return False
 
     # If one contains the other, or they share a major word (other than common fillers)
@@ -115,10 +112,6 @@ def deduplicate_jobs(jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def _assign_region_tier(job: Dict[str, Any], city: str, state: str) -> int:
     """
     Grades how well a job matches the requested region.
-
-    This is deliberately non-destructive: out-of-region jobs are ranked lower
-    rather than dropped, so the caller can lead with exact-region matches and
-    then top up to top_k with nearby and nationwide listings.
     """
     job_loc = (job.get("location") or "").lower()
 
@@ -140,10 +133,7 @@ def _assign_region_tier(job: Dict[str, Any], city: str, state: str) -> int:
 
 class JobAggregator:
     def __init__(self):
-        # India-only scope: JSearch is the single live source. The other
-        # provider modules remain in the tree but are intentionally not
-        # registered — Wellfound was static sample data, Remotive is
-        # remote-only, and Adzuna/The Muse skew heavily non-India.
+        # India-only scope: JSearch is the single active source.
         self.sources = {
             "JSearch": JSearchSource(),
         }
@@ -167,8 +157,6 @@ class JobAggregator:
         """
         Queries all sources concurrently, normalizes, deduplicates, and returns unified list.
         """
-        # The search is India-only, so the country argument is informational.
-        # What actually steers the provider query is the city.
         target_city = canonical_city(city) if city else ""
         if not location:
             location = target_city
@@ -202,8 +190,7 @@ class JobAggregator:
                 except Exception as exc:
                     logger.error(f"Failed to normalize raw job from {name}: {exc}")
 
-        # Hard India gate: anything that does not resolve to India is dropped
-        # outright, before any other filtering or ranking.
+        # Keep only India jobs
         india_jobs = [
             j for j in all_normalized_jobs
             if looks_indian(j.get("location") or "", j.get("country") or "")
@@ -215,9 +202,7 @@ class JobAggregator:
         # Remove duplicates
         deduplicated = deduplicate_jobs(india_jobs)
 
-        # Apply post-aggregation filters. Note city/state are NOT passed here:
-        # region is handled by tiering below so out-of-city jobs survive as
-        # top-up candidates instead of being discarded.
+        # Apply post-aggregation filters.
         filtered_jobs = self._apply_filters(
             deduplicated,
             workplace_types=workplace_types,
@@ -241,8 +226,7 @@ class JobAggregator:
             f"{len(filtered_jobs) - exact - same_state} elsewhere in India)."
         )
 
-        # Return the full tiered pool. The caller applies top_k after semantic
-        # ranking, so truncating here would throw away better matches.
+        # Return the full tiered pool.
         return filtered_jobs
 
     async def _safe_fetch(
@@ -283,8 +267,7 @@ class JobAggregator:
         industry: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
-        Filters the unified job list by attributes that are genuinely
-        disqualifying. Region is handled separately via tiering.
+        Filters the unified job list by attributes.
         """
         filtered = []
         for job in jobs:
@@ -295,11 +278,6 @@ class JobAggregator:
                     
             # 2. Experience Level Filter (Entry Level / Mid Level / Senior Level / Lead / Executive)
             if experience_levels:
-                # The UI already sends canonical values ("Entry Level", "Mid Level",
-                # "Senior Level", "Lead"), so match them directly. The keyword pass
-                # below is only a fallback for free-form input like "0-1 Years";
-                # previously "Lead" matched no branch at all and silently disabled
-                # the whole filter.
                 canonical = {"Entry Level", "Mid Level", "Senior Level", "Lead", "Executive"}
                 mapped_levels = []
                 for exp_in in experience_levels:
@@ -320,9 +298,6 @@ class JobAggregator:
 
                 if mapped_levels and job.get("experience_level") not in mapped_levels:
                     continue
-
-            # Country/state/city are handled by the India gate and the region
-            # tiering in aggregate_jobs, not by dropping rows here.
 
             # 3. Employment Type Filter
             if employment_types:

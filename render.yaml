@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: careerpilot-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./job_search_assistant.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false

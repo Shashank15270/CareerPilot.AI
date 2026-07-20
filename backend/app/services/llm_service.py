@@ -61,21 +61,12 @@ async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 30.0) ->
 
     for attempt in range(1, retries + 1):
         try:
-            # Separate connect timeout from read timeout: reaching Groq should be
-            # fast, but generating a long JSON answer legitimately is not. A slow
-            # connect means the network is down, and waiting the full read budget
-            # for that just makes the user stare at a spinner.
             timeouts = httpx.Timeout(timeout_sec, connect=8.0)
             async with httpx.AsyncClient(timeout=timeouts) as client:
                 logger.info(f"Groq API request attempt {attempt}/{retries} using model {model}")
                 response = await client.post(url, headers=headers, json=payload)
 
                 # Handle Rate Limits (HTTP 429).
-                #
-                # Groq's free tier caps tokens-per-minute (12k), not just
-                # request count. Blindly re-sending a ~1.2k-token prompt three
-                # times makes the exact problem worse, so honour the server's
-                # retry-after and give up quickly when the wait is long.
                 if response.status_code == 429:
                     retry_after = response.headers.get("retry-after")
                     try:
@@ -89,8 +80,6 @@ async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 30.0) ->
                         f"(tokens remaining: {remaining}, retry-after: {wait_s}s)"
                     )
 
-                    # Waiting longer than this would leave the user staring at a
-                    # spinner; better to surface an actionable message.
                     if attempt == retries or wait_s > 20:
                         raise HTTPException(
                             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -138,15 +127,10 @@ async def call_groq(prompt: str, retries: int = 3, timeout_sec: float = 30.0) ->
 
         except HTTPException:
             # Already a well-formed API error (e.g. the 429 raised above).
-            # Without this it fell through to the generic handler below and was
-            # re-wrapped as a ValueError, surfacing to the user as a confusing
-            # 500 instead of "rate limited, try again shortly".
             raise
 
         except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as ce:
-            # Network-level failure reaching Groq (DNS, TLS handshake, dropped
-            # connection). Retry quickly with a short backoff rather than
-            # burning the full read timeout on each attempt.
+            # Network-level failure reaching Groq. Retry quickly with a short backoff.
             logger.warning(
                 f"Network error reaching Groq on attempt {attempt}/{retries}: "
                 f"{type(ce).__name__}"
