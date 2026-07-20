@@ -54,7 +54,7 @@ export default function Navbar() {
         >
           <Sparkles className="h-5 w-5 text-primary shrink-0" />
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-display truncate">
-            Antigravity AI
+            CareerPilot.AI
           </span>
         </Link>
 

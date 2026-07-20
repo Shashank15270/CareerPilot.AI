@@ -1,4 +1,4 @@
-import { Briefcase, Github, Linkedin, Twitter } from 'lucide-react'
+import { Briefcase, Github, Linkedin } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -10,22 +10,19 @@ export default function Footer() {
               <Briefcase className="h-4 w-4 text-primary" />
             </div>
             <span className="font-extrabold text-base tracking-wide text-text font-display">
-              Antigravity<span className="text-accent font-semibold ml-0.5">AI</span>
+              CareerPilot<span className="text-accent font-semibold ml-0.5">.AI</span>
             </span>
           </div>
           
           <p className="text-xs text-muted text-center md:text-left font-semibold">
-            &copy; {new Date().getFullYear()} Antigravity AI. Powered by Advanced Neural Embeddings & Grok AI.
+            &copy; {new Date().getFullYear()} CareerPilot.AI.
           </p>
           
           <div className="flex space-x-4">
-            <a href="#" className="text-muted hover:text-text transition-colors">
-              <Twitter className="h-4 w-4" />
-            </a>
-            <a href="#" className="text-muted hover:text-text transition-colors">
+            <a href="https://linkedin.com/in/shashankyadav" target="_blank" rel="noopener noreferrer" className="text-muted hover:text-text transition-colors">
               <Linkedin className="h-4 w-4" />
             </a>
-            <a href="#" className="text-muted hover:text-text transition-colors">
+            <a href="https://github.com/Shashank15270" target="_blank" rel="noopener noreferrer" className="text-muted hover:text-text transition-colors">
               <Github className="h-4 w-4" />
             </a>
           </div>
