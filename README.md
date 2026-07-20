@@ -1,5 +1,6 @@
 # CareerPilot.AI
 
+🚀 **Live Deployment:** [https://careerpilott.netlify.app/](https://careerpilott.netlify.app/)
 AI-powered job recommendation platform. Upload your resume, get matched to live Indian job listings, and receive AI analysis for each role — match explanation, ATS score, skill gap, and interview prep.
 
 **Stack:** FastAPI + SQLAlchemy (backend) · React + Vite + Tailwind (frontend) · JSearch API (jobs) · Groq (AI)
